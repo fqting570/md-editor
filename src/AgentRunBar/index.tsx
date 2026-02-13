@@ -1,14 +1,17 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, ConfigProvider, Tooltip } from 'antd';
+import { Button, ConfigProvider, Tooltip, Typography } from 'antd';
 import classNames from 'classnames';
-import React, { useContext } from 'react';
+import { motion } from 'framer-motion';
+import React, { useContext, useMemo } from 'react';
 import { I18nContext } from '../i18n';
-import { PauseIcon } from './icons/PauseIcon';
-import { PlayIcon } from './icons/PlayIcon';
-import { SimplePauseIcon } from './icons/SimplePauseIcon';
-import { SimplePlayIcon } from './icons/SimplePlayIcon';
-import { SimpleStopIcon } from './icons/SimpleStopIcon';
-import { StopIcon } from './icons/StopIcon';
+import {
+  PauseIcon,
+  PlayIcon,
+  SimplePauseIcon,
+  SimplePlayIcon,
+  SimpleStopIcon,
+  StopIcon,
+} from './icons';
 import Robot from './Robot';
 import { useStyle } from './style';
 
@@ -281,7 +284,7 @@ const renderButtonGroup = ({
 
       {/* 停止按钮 */}
       {(isRunning || isPause) && onStop && (
-        <Tooltip title={stopTitle}>
+        <Tooltip mouseEnterDelay={0.3} title={stopTitle}>
           <div
             className={classNames(`${baseCls}-pause`, hashId)}
             role="button"
@@ -295,7 +298,7 @@ const renderButtonGroup = ({
       )}
       {/* 暂停按钮 */}
       {isRunning && onPause && (
-        <Tooltip title={pauseTitle}>
+        <Tooltip title={pauseTitle} mouseEnterDelay={0.3}>
           <div
             className={classNames(`${baseCls}-pause`, hashId)}
             role="button"
@@ -309,7 +312,7 @@ const renderButtonGroup = ({
       )}
       {/* 继续按钮 */}
       {isPause && onResume && (
-        <Tooltip title={playTitle}>
+        <Tooltip title={playTitle} mouseEnterDelay={0.3}>
           <div
             className={classNames(`${baseCls}-play`, hashId)}
             role="button"
@@ -405,7 +408,7 @@ export const TaskRunning: React.FC<TaskRunningProps> = (rest) => {
   const { locale } = useContext(I18nContext);
 
   // 获取机器人状态
-  const getRobotStatus = () => {
+  const robotStatus = useMemo(() => {
     if (taskRunningStatus === TASK_RUNNING_STATUS.COMPLETE) {
       return 'dazing';
     }
@@ -413,7 +416,7 @@ export const TaskRunning: React.FC<TaskRunningProps> = (rest) => {
       taskRunningStatus === TASK_RUNNING_STATUS.PAUSE ||
       taskStatus === TASK_STATUS.PAUSE
     ) {
-      return 'default';
+      return 'pause';
     }
     if (
       taskStatus === TASK_STATUS.SUCCESS ||
@@ -422,16 +425,22 @@ export const TaskRunning: React.FC<TaskRunningProps> = (rest) => {
       return 'default';
     }
     return 'thinking';
-  };
+  }, [taskRunningStatus, taskStatus]);
 
   return wrapSSR(
-    <div
+    <motion.div
       className={classNames(
         baseCls,
         hashId,
         className,
         `${baseCls}-${variant}`,
+        {
+          [`${baseCls}-with-description`]: description,
+          [`${baseCls}-status-${robotStatus}`]: robotStatus,
+        },
       )}
+      layout="size"
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       style={rest.style}
     >
       <div className={classNames(`${baseCls}-border`, hashId)} />
@@ -440,21 +449,27 @@ export const TaskRunning: React.FC<TaskRunningProps> = (rest) => {
         {icon !== false && (
           <div className={classNames(`${baseCls}-left-icon-wrapper`, hashId)}>
             <Tooltip title={iconTooltip}>
-              <Robot icon={icon} status={getRobotStatus()} size={40} />
+              <Robot icon={icon} status={robotStatus} size={40} />
             </Tooltip>
           </div>
         )}
         {/* 文字区 */}
         <div className={classNames(`${baseCls}-left-content`, hashId)}>
           {title && (
-            <div className={classNames(`${baseCls}-left-main-text`, hashId)}>
+            <Typography.Title
+              className={classNames(`${baseCls}-left-main-text`, hashId)}
+              ellipsis={{ tooltip: title, rows: description ? 1 : 2 }}
+            >
               {title}
-            </div>
+            </Typography.Title>
           )}
           {variant !== 'simple' && description && (
-            <div className={classNames(`${baseCls}-left-text`, hashId)}>
+            <Typography.Text
+              className={classNames(`${baseCls}-left-text`, hashId)}
+              ellipsis={{ tooltip: description }}
+            >
               {description}
-            </div>
+            </Typography.Text>
           )}
         </div>
       </div>
@@ -475,6 +490,6 @@ export const TaskRunning: React.FC<TaskRunningProps> = (rest) => {
         locale,
         variant,
       })}
-    </div>,
+    </motion.div>,
   );
 };
